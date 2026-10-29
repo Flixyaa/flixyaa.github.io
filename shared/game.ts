@@ -1,3 +1,4 @@
+import {type WeaponId} from './weapons.js';
 export const DT=1/60, HEIGHT=1.75, RADIUS=.35;
 export type Box={x:number,y:number,z:number,w:number,h:number,d:number,color:number};
 export const boxes:Box[]=[
@@ -12,7 +13,7 @@ export const boxes:Box[]=[
 ];
 export type Input={seq:number,x:number,z:number,yaw:number,pitch:number,jump:boolean,sprint:boolean,fire:boolean,reload:boolean};
 export type Body={x:number,y:number,z:number,vx:number,vy:number,vz:number,ground:boolean,yaw:number,pitch:number};
-export type Player=Body&{id:string,hp:number,rounds:number,ammo:number,reloadAt:number,shotAt:number,respawnAt:number,ack:number,ready:boolean,life:number};
+export type Player=Body&{id:string,weapon:WeaponId,hp:number,rounds:number,ammo:number,reloadAt:number,shotAt:number,respawnAt:number,ack:number,ready:boolean,life:number};
 export function spawn(slot:number):Body{return {x:slot?14:-14,y:0,z:0,vx:0,vy:0,vz:0,ground:true,yaw:slot?Math.PI/2:-Math.PI/2,pitch:0};}
 export function overlap(p:Body,b:Box){return p.x+RADIUS>b.x-b.w/2&&p.x-RADIUS<b.x+b.w/2&&p.z+RADIUS>b.z-b.d/2&&p.z-RADIUS<b.z+b.d/2&&p.y+HEIGHT>b.y-b.h/2+1e-6&&p.y<b.y+b.h/2-1e-6;}
 export function move(p:Body,i:Input){

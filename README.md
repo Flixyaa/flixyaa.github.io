@@ -68,3 +68,7 @@ Der Projektordner liegt momentan im Windows-Temp-Verzeichnis. Für dauerhafte Nu
 ## GitHub Pages
 
 Die Website wird aus docs auf dem main-Branch veröffentlicht. Der Bot-Modus läuft vollständig im Browser mit derselben Match- und Bot-Logik wie der Server. Für Online-PvP muss VITE_WS_URL beim Build auf einen öffentlichen wss://-Server gesetzt werden. Ohne diese Konfiguration zeigt Pages einen Hinweis statt eines fehlschlagenden Verbindungsversuchs. Zum Aktualisieren npm run build ausführen und den Inhalt von dist nach docs kopieren; danach committen.
+
+## Lobby und Waffen
+
+In der Lobby stehen AR-24 Sentinel (25 Schaden, 24 Patronen), VX-9 Vector (18 Schaden, 32 Patronen) und MR-8 Longshot (55 Schaden, 8 Patronen) mit drehender 3D-Vorschau zur Wahl. Die Auswahl ist für das Match einschließlich Revanche festgelegt; zum Wechseln ins Hauptmenü zurückkehren. Alle Waffen sind automatische Hitscan-Waffen mit eigenen Schussabständen, Nachladezeiten und Rückstoßwerten. Der Server akzeptiert ausschließlich bekannte Waffen-IDs beim Raumbeitritt. Die Grafik nutzt prozedurale Bodenmaterialien, Metallverkleidungen, Lichtleisten, Schatten, Tonemapping und detaillierte Waffen aus selbst erstellter Geometrie. Keine externen Assets. `node tests/armory.mjs` prüft die drei Waffen im Browser; mit TEST_URL kann die veröffentlichte Website geprüft werden.
