@@ -1,0 +1,12 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {spawn} from 'node:child_process';import {WebSocket} from 'ws';
+test('complete five-round match over real WebSockets using input-only bots, then rematch',{timeout:55000},async()=>{
+ const proc=spawn(process.execPath,['--import','tsx','server/index.ts'],{env:{...process.env,PORT:'3100'},stdio:['ignore','pipe','pipe']});const sockets:WebSocket[]=[];let loop:ReturnType<typeof setInterval>|undefined;
+ try{await new Promise<void>((r,j)=>{proc.stdout.on('data',()=>r());proc.on('error',j);proc.on('exit',c=>j(Error('Server exited '+c)));});
+ const bots:any[]=[];let room='',state:any;
+ for(let n=0;n<2;n++){const ws=new WebSocket('ws://127.0.0.1:3100/ws');sockets.push(ws);const bot={ws,id:'',seq:0};bots.push(bot);ws.on('message',raw=>{const m=JSON.parse(raw.toString());if(m.type==='hello')bot.id=m.id;if(m.type==='joined')room=m.code;if(m.type==='state')state=m;});await new Promise<void>(r=>ws.on('open',r));}
+ const wait=async(fn:()=>boolean,timeout=4000)=>{const end=Date.now()+timeout;while(!fn()){if(Date.now()>end)throw Error('Match timeout: '+JSON.stringify(state));await new Promise(r=>setTimeout(r,20));}};
+ bots[0].ws.send(JSON.stringify({type:'create'}));await wait(()=>!!room);bots[1].ws.send(JSON.stringify({type:'join',code:room}));await wait(()=>state?.players.length===2);for(const b of bots)b.ws.send(JSON.stringify({type:'ready'}));await wait(()=>state?.phase==='playing');
+ loop=setInterval(()=>{if(state?.phase!=='playing')return;for(const [n,b]of bots.entries()){const p=state.players.find((p:any)=>p.id===b.id),enemy=state.players.find((p:any)=>p.id!==b.id);if(!p||!enemy)continue;const error=-7-p.z;const moving=Math.abs(error)>.08;const yaw=moving?0:Math.atan2(-(enemy.x-p.x),-(enemy.z-p.z));b.ws.send(JSON.stringify({type:'input',input:{seq:b.seq++,x:0,z:moving?Math.max(-1,Math.min(1,-error*2)):0,yaw,pitch:0,jump:false,sprint:false,fire:n===0&&!moving&&enemy.hp>0&&Math.abs(enemy.z+7)<.15,reload:p.ammo===0}}));}},1000/60);
+ await wait(()=>state?.phase==='finished',45000);assert.equal(state.winner,bots[0].id);assert.equal(state.players.find((p:any)=>p.id===bots[0].id).rounds,5);clearInterval(loop);loop=undefined;for(const b of bots)b.ws.send(JSON.stringify({type:'ready'}));await wait(()=>state?.phase==='playing');assert.ok(state.players.every((p:any)=>p.rounds===0&&p.hp===100));
+ }finally{if(loop)clearInterval(loop);sockets.forEach(s=>s.terminate());proc.kill();}
+});
