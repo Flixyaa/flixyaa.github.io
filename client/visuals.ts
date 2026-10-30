@@ -19,7 +19,12 @@ export function weaponModel(id:WeaponId){
  for(let n=0;n<4;n++)box(g,[.008,.04,.055],[-.067,.01,-body/2+.04+n*.065],steel);
  box(g,[.045,.035,.085],[.09,.035,.12],steel);
  if(long){box(g,[.08,.06,.23],[0,.15,0],dark);tube(g,.06,.31,[0,.22,-.01],dark);tube(g,.049,.009,[0,.22,-.17],new T.MeshStandardMaterial({color:0x55bacc,emissive:0x16768b,emissiveIntensity:.4,metalness:.8,roughness:.15}));}
- else {box(g,[.09,.085,.035],[0,.17,.13],dark);box(g,[.045,.025,.04],[0,.2,.13],accent);box(g,[.018,.09,.025],[0,.15,-body/2+.02],dark);}
+ else {
+ // Open reflex sight: its optical center sits at y=.20, aligned to the camera in ADS.
+ for(const x of [-.067,.067])box(g,[.016,.14,.035],[x,.20,-.03],dark);
+ for(const y of [.13,.27])box(g,[.15,.016,.035],[0,y,-.03],dark);
+ box(g,[.08,.02,.05],[0,.12,-.03],steel);
+ }
  const muzzle=new T.Mesh(new T.ConeGeometry(.085,.24,6),new T.MeshBasicMaterial({color:0xffe1a0,transparent:true,opacity:.9}));muzzle.rotation.x=-Math.PI/2;muzzle.position.set(0,.018,-body/2-barrel-.12);muzzle.name='muzzle';muzzle.visible=false;g.add(muzzle);
  return g;
 }

@@ -1,4 +1,4 @@
-import {weapons,isWeapon,type WeaponId} from '../shared/weapons.js';
+import {weapons,isWeapon,shotSpread,spreadAngles,type WeaponId} from '../shared/weapons.js';
 import {spawn,move,hitDistance,type Player,type Input} from '../shared/game.js';
 export class Match{
  players:Player[]=[];phase:'waiting'|'playing'|'roundover'|'finished'='waiting';endAt=0;winner='';roundWinner='';round=0;nextRoundAt=0;events:any[]=[];
@@ -16,7 +16,7 @@ export class Match{
  if(p.reloadAt&&now>=p.reloadAt){p.ammo=weapon.magazine;p.reloadAt=0;}
  const i=inputs.get(p.id);if(!i)continue;move(p,i);p.ack=i.seq;
  if(i.reload&&p.ammo<weapon.magazine&&!p.reloadAt)p.reloadAt=now+weapon.reload;
- if(i.fire&&!p.reloadAt&&now-p.shotAt>=weapon.interval&&p.ammo>0){p.shotAt=now;p.ammo--;const enemy=this.players.find(q=>q.id!==p.id&&q.hp>0);const hit=enemy&&Number.isFinite(hitDistance(p,enemy));this.events.push({type:'shot',id:p.id,weapon:p.weapon,hit:!!hit});if(hit&&enemy){enemy.hp=Math.max(0,enemy.hp-weapon.damage);if(enemy.hp===0){this.endRound(p.id,now);return;}}}
+ if(i.fire&&!p.reloadAt&&now-p.shotAt>=weapon.interval&&p.ammo>0){p.shotAt=now;p.ammo--;const enemy=this.players.find(q=>q.id!==p.id&&q.hp>0);const spread=shotSpread(p.weapon,!!i.aim,Math.hypot(p.vx,p.vz)>1,!p.ground),angles=spreadAngles(spread);const hit=enemy&&Number.isFinite(hitDistance({...p,yaw:p.yaw+angles.yaw,pitch:p.pitch+angles.pitch},enemy));this.events.push({type:'shot',id:p.id,weapon:p.weapon,hit:!!hit});if(hit&&enemy){enemy.hp=Math.max(0,enemy.hp-weapon.damage);if(enemy.hp===0){this.endRound(p.id,now);return;}}}
  }
  }
 }
