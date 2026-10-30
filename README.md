@@ -4,14 +4,14 @@
 
 Im Hauptmenü **Gegen Bot spielen** wählen, danach **Weiterspielen** zum Aktivieren der Maus. Der Trainingsraum startet ohne zweiten Browser. Der Bot findet Wege um Deckungen, dreht sich mit begrenzter Geschwindigkeit und schießt erst nach einer Reaktionszeit bei freier Sicht. Er verwendet dieselbe serverseitige Bewegung, Munition, Nachladezeit, Trefferprüfung und Respawnlogik wie Spieler. Es gelten dieselben Matchregeln; mit **Bereit / Revanche** beginnt nach Matchende das nächste Duell. Der Bot belegt den zweiten Platz; beim Verlassen wird der Trainingsraum entfernt. Der Bot-Modus läuft direkt im Browser und benötigt keinen Node-Server. Online-PvP verwendet weiterhin den autoritativen WebSocket-Server. Vor dem Start stehen im Menü Leicht (Standard), Mittel und Schwer zur Wahl. Leicht reagiert nach 1,5 s, schießt höchstens alle 850 ms und bewegt sich langsamer; Mittel reagiert nach 900 ms und schießt alle 450 ms; Schwer reagiert nach 550 ms und schießt alle 240 ms. Leicht und Mittel zielen ungenauer als Schwer. Der Bot plant Wege zur Gegnerposition, zielt aber nur bei Sichtkontakt.
 
-Eigenständiger Desktop-1vs1-Shooter auf der Low-Poly-Map **Foundry**. Alle Modelle, Materialien und Sounds entstehen im Code; keine externen Assets.
+Eigenständiger Desktop-1vs1-Shooter auf der Low-Poly-Map **Foundry**. Modelle und Sounds entstehen im Code. Betonoberflächen verwenden lokale CC0-Texturen von Poly Haven; Quellen stehen in ASSET-LICENSES.md.
 
 ## Lokal starten
 
 Voraussetzung: Node.js 22.12+ und npm. PowerShell:
 
 ```powershell
-cd rift-duel
+cd C:\Users\sesse\AppData\Local\Temp\rift-duel
 npm.cmd install
 npm.cmd run dev
 ```
@@ -71,7 +71,7 @@ Die Website wird aus docs auf dem main-Branch veröffentlicht. Der Bot-Modus lä
 
 ## Lobby und Waffen
 
-In der Lobby stehen AR-24 Sentinel (25 Schaden, 24 Patronen), VX-9 Vector (18 Schaden, 32 Patronen) und MR-8 Longshot (100 Schaden, 8 Patronen) mit drehender 3D-Vorschau zur Wahl. Die Auswahl ist für das Match einschließlich Revanche festgelegt; zum Wechseln ins Hauptmenü zurückkehren. Alle Waffen sind automatische Hitscan-Waffen mit eigenen Schussabständen, Nachladezeiten und Rückstoßwerten. Der Server akzeptiert ausschließlich bekannte Waffen-IDs beim Raumbeitritt. Die Grafik nutzt prozedurale Bodenmaterialien, Metallverkleidungen, Lichtleisten, Schatten, Tonemapping und detaillierte Waffen aus selbst erstellter Geometrie. Keine externen Assets. `node tests/armory.mjs` prüft die drei Waffen im Browser; mit TEST_URL kann die veröffentlichte Website geprüft werden.
+In der Lobby stehen AR-24 Sentinel (25 Schaden, 24 Patronen), VX-9 Vector (18 Schaden, 32 Patronen) und MR-8 Longshot (100 Schaden, 8 Patronen) mit drehender 3D-Vorschau zur Wahl. Die Auswahl ist für das Match einschließlich Revanche festgelegt; zum Wechseln ins Hauptmenü zurückkehren. Alle Waffen sind automatische Hitscan-Waffen mit eigenen Schussabständen, Nachladezeiten und Rückstoßwerten. Der Server akzeptiert ausschließlich bekannte Waffen-IDs beim Raumbeitritt. Die Grafik nutzt prozedurale Bodenmaterialien, Metallverkleidungen, Lichtleisten, Schatten, Tonemapping und detaillierte Waffen aus selbst erstellter Geometrie. Betontexturen: Poly Haven (CC0). `node tests/armory.mjs` prüft die drei Waffen im Browser; mit TEST_URL kann die veröffentlichte Website geprüft werden.
 
 ## Visiere und Figuren
 
@@ -80,3 +80,11 @@ Rechtsklick halten aktiviert das Reflexvisier von AR und SMG beziehungsweise das
 Prozedurale Soldaten besitzen Kopf, Helm, Schutzbrille, Weste, Taschen, Arme, Handschuhe und animierte Beine. In der Egoansicht halten sichtbare Arme die Waffe. Die Trefferprüfung verwendet weiterhin den bestehenden Körperquader.
 
 Zusätzliche Prüfung: `node tests/sights-browser.mjs` bei laufendem Entwicklungsserver. Prüft alle drei Visiere, Schießen beim Zielen, Nachladen und Loslassen. `node tests/character-preview.mjs` erstellt eine Modellvorschau.
+
+## Grafik-Update
+
+Detailliertere Waffen mit abgerundeten Kanten, getrennt animiertem Magazin und Verschluss, Stoffmaterialien, gegliederten Handschuhen und überarbeiteten Soldaten. Die Foundry nutzt lokale 1K-Farb-, Normal- und Rauheitskarten von Poly Haven, atmosphärischen Himmel, Lichtreflexionen, Kontaktschatten und zusätzliche Industriearchitektur. Geometrie wird nach Material zusammengefasst, um Zeichenaufrufe zu reduzieren. Die Figuren bleiben prozedural und stilisiert, nicht fotorealistisch.
+
+Unter Einstellungen → Grafik kann zwischen Hoch (Schatten, höhere Auflösung) und Leistung gewechselt werden. Die Auswahl wird gespeichert. Die Waffen besitzen synthetisierte Schussgeräusche mit Rauschimpuls und Bassanteil.
+
+`node tests/graphics-browser.mjs` prüft die sechs Texturen, beide Grafikmodi und Browser-/WebGL-Fehler. `TEST_URL` unterstützt die Live-Seite. Veröffentlichung: Build ausführen, danach `node package-site.mjs`. Das Paket enthält Quellcode, Lizenzhinweise, öffentliche Assets und den Pages-Build einschließlich binärsicherer Texturen.

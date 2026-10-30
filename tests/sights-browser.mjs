@@ -10,9 +10,9 @@ try{
   assert.equal(await page.locator('#cross').isVisible(),false);
   await page.screenshot({path:`sights-${id}.png`});
   // Releasing left click must not interrupt right-click aiming.
-  await page.mouse.down({button:'left'});await page.waitForTimeout(100);await page.mouse.up({button:'left'});
+  const before=await page.locator('#stats').textContent();await page.mouse.down({button:'left'});await page.waitForFunction(previous=>document.querySelector('#stats').textContent!==previous,before);await page.mouse.up({button:'left'});
   assert.equal(await page.locator(id==='marksman'?'#scope':'#reflex').isVisible(),true);
-  await page.keyboard.press('KeyR');await page.waitForTimeout(100);assert.equal(await page.locator(id==='marksman'?'#scope':'#reflex').isVisible(),false);
+  await page.keyboard.press('KeyR');await page.waitForFunction(()=>document.querySelector('#stats').textContent.includes('NACHLADEN'));await page.locator(id==='marksman'?'#scope':'#reflex').waitFor({state:'hidden'});
   await page.waitForTimeout(2000);await page.locator(id==='marksman'?'#scope':'#reflex').waitFor({state:'visible'});
   await page.mouse.up({button:'right'});await page.waitForTimeout(300);assert.equal(await page.locator('#scope').isVisible(),false);assert.equal(await page.locator('#reflex').isVisible(),false);
   await page.screenshot({path:`hip-${id}.png`});
