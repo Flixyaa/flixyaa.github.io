@@ -1,4 +1,4 @@
-import {Sky} from 'three/addons/objects/Sky.js';
+﻿import {Sky} from 'three/addons/objects/Sky.js';
 ﻿import * as T from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {finish} from './materials';
@@ -22,4 +22,9 @@ export function industrialDetails(scene:T.Scene){
  const ao=document.createElement('canvas');ao.width=ao.height=128;const ac=ao.getContext('2d')!,gradient=ac.createRadialGradient(64,64,10,64,64,64);gradient.addColorStop(0,'#0009');gradient.addColorStop(1,'#0000');ac.fillStyle=gradient;ac.fillRect(0,0,128,128);const amap=new T.CanvasTexture(ao);
  for(const [x,z,w,d]of [[0,0,7,11],[-10,-4,5,7],[10,4,5,7],[0,10,8,5],[0,-10,8,5]]){const p=new T.Mesh(new T.PlaneGeometry(w,d),new T.MeshBasicMaterial({map:amap,transparent:true,depthWrite:false,opacity:.5}));p.rotation.x=-Math.PI/2;p.position.set(x,.022,z);scene.add(p);}
 }
-export function batchArena(scene:T.Scene){scene.updateMatrixWorld(true);const grouped=new Map<T.Material,T.Mesh[]>();for(const o of [...scene.children])if(o instanceof T.Mesh&&!Array.isArray(o.material)&&!o.material.transparent){const group=grouped.get(o.material)||[];group.push(o);grouped.set(o.material,group);}for(const [mat,meshes]of grouped){if(meshes.length<2)continue;const geometries=meshes.map(m=>(m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone()).applyMatrix4(m.matrixWorld));const geometry=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!geometry)continue;meshes.forEach(m=>{scene.remove(m);m.geometry.dispose();});const mesh=new T.Mesh(geometry,mat);mesh.castShadow=mesh.receiveShadow=true;scene.add(mesh);}}
+export function batchArena(scene:T.Scene){
+ scene.updateMatrixWorld(true);const grouped=new Map<string,{material:T.Material,meshes:T.Mesh[]}>();
+ scene.traverse(o=>{if(!(o instanceof T.Mesh)||Array.isArray(o.material)||o.material.transparent)return;let p:T.Object3D|null=o;while(p){if(p.userData.dynamic)return;p=p.parent;}const key=o.material.uuid+':'+o.castShadow+':'+o.receiveShadow;const group=grouped.get(key)||{material:o.material,meshes:[] as T.Mesh[]};group.meshes.push(o);grouped.set(key,group);});
+ for(const {material,meshes}of grouped.values()){if(meshes.length<2)continue;const geometries=meshes.map(m=>(m.geometry.index?m.geometry.toNonIndexed():m.geometry.clone()).applyMatrix4(m.matrixWorld));const geometry=mergeGeometries(geometries);geometries.forEach(g=>g.dispose());if(!geometry)continue;const mesh=new T.Mesh(geometry,material);mesh.castShadow=meshes[0].castShadow;mesh.receiveShadow=meshes[0].receiveShadow;meshes.forEach(m=>{m.removeFromParent();m.geometry.dispose();});scene.add(mesh);}
+}
+

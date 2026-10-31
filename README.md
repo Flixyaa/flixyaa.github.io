@@ -111,3 +111,10 @@ Die AK-47 verwendet ein bernsteinfarbenes Kobra-Chevron-Absehen, die MP5 ein gr�
 Kollisionen, Spawnpunkte, Trefferprüfung und Bot-Wegfindung verwenden die Geometrie des jeweiligen Matches; mehrere Räume können gleichzeitig unterschiedliche Maps spielen. Die neuen Arenen verwenden die vorhandenen CC0-Texturen, weiche Kontaktschatten, Bodenmarkierungen, gerippte Container, Beschriftungen und mapabhängige Beleuchtung. Der Leistungsmodus bleibt verfügbar.
 
 Prüfung: `npm test`, `npm run build`, `node tests/maps-browser.mjs` und `node tests/sights-browser.mjs`. Für Browserprüfungen den lokalen Vite-Server starten; `TEST_URL` kann auf die veröffentlichte Website gesetzt werden.
+## Detaillierte Umgebungen
+
+Die vier Arenen besitzen eigene Deckungsmodelle und Umgebungskulissen: Foundry verwendet genietete Maschinengehäuse, animierte Lüfter und Rohrtrassen; Port Meridian besitzt Containertüren, Verschlussstangen, Fachwerkkräne und einen Frachter; Redstone zeigt Schnittfugen, Terrassenfelsen und eine Förderanlage; Reactor Nine verwendet Fassaden, technische Dachaufbauten, Versorgungstrassen und geformte Kühltürme.
+
+Neu sind maßstäblich gekachelte Oberflächen, prozedurale Lack-, Asphalt- und Sandmaterialien, Wolkenhimmel, Fugen, Schilder, Entwässerung, kleine Bodenablagerungen, dezente Staubpartikel und Pfützen mit Glanzlichtern aus der Umgebungsbeleuchtung. Ein kurzes warmes Licht begleitet Schüsse. Statische Details werden nach Material und Schatteneigenschaften zusammengefasst; animierte Objekte bleiben separat. Der Leistungsmodus blendet feine Bodendetails und Partikel aus und pausiert Lüfteranimationen. Beim Kartenwechsel werden Geometrien, Materialien und karteneigene Texturen freigegeben. Kollisionsvolumen, Spawnpunkte und Bot-Routen bleiben erhalten.
+
+Zusätzliche Grafikprüfung: `node tests/world-detail-browser.mjs` (optional mit `TEST_URL`). Prüft vier Karten, Schießen/Nachladen, beide Qualitätsstufen, wiederholte Kartenwechsel und Konsolen-/Shaderfehler. Die protokollierten Framezeiten beziehen sich ausschließlich auf die Testumgebung.
