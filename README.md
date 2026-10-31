@@ -71,7 +71,7 @@ Die Website wird aus docs auf dem main-Branch veröffentlicht. Der Bot-Modus lä
 
 ## Lobby und Waffen
 
-In der Lobby stehen AR-24 Sentinel (25 Schaden, 24 Patronen), VX-9 Vector (18 Schaden, 32 Patronen) und MR-8 Longshot (100 Schaden, 8 Patronen) mit drehender 3D-Vorschau zur Wahl. Die Auswahl ist für das Match einschließlich Revanche festgelegt; zum Wechseln ins Hauptmenü zurückkehren. Alle Waffen sind automatische Hitscan-Waffen mit eigenen Schussabständen, Nachladezeiten und Rückstoßwerten. Der Server akzeptiert ausschließlich bekannte Waffen-IDs beim Raumbeitritt. Die Grafik nutzt prozedurale Bodenmaterialien, Metallverkleidungen, Lichtleisten, Schatten, Tonemapping und detaillierte Waffen aus selbst erstellter Geometrie. Betontexturen: Poly Haven (CC0). `node tests/armory.mjs` prüft die drei Waffen im Browser; mit TEST_URL kann die veröffentlichte Website geprüft werden.
+In der Lobby stehen AK-47 (25 Schaden, 24 Patronen), MP5 (18 Schaden, 32 Patronen) und Barrett M82 .50 (100 Schaden, 8 Patronen) mit drehender 3D-Vorschau zur Wahl. Die Auswahl ist für das Match einschließlich Revanche festgelegt; zum Wechseln ins Hauptmenü zurückkehren. Alle Waffen sind automatische Hitscan-Waffen mit eigenen Schussabständen, Nachladezeiten und Rückstoßwerten. Der Server akzeptiert ausschließlich bekannte Waffen-IDs beim Raumbeitritt. Die Grafik nutzt prozedurale Bodenmaterialien, Metallverkleidungen, Lichtleisten, Schatten, Tonemapping und detaillierte Waffen aus selbst erstellter Geometrie. Betontexturen: Poly Haven (CC0). `node tests/armory.mjs` prüft die drei Waffen im Browser; mit TEST_URL kann die veröffentlichte Website geprüft werden.
 
 ## Visiere und Figuren
 
@@ -88,3 +88,9 @@ Detailliertere Waffen mit abgerundeten Kanten, getrennt animiertem Magazin und V
 Unter Einstellungen → Grafik kann zwischen Hoch (Schatten, höhere Auflösung) und Leistung gewechselt werden. Die Auswahl wird gespeichert. Die Waffen besitzen synthetisierte Schussgeräusche mit Rauschimpuls und Bassanteil.
 
 `node tests/graphics-browser.mjs` prüft die sechs Texturen, beide Grafikmodi und Browser-/WebGL-Fehler. `TEST_URL` unterstützt die Live-Seite. Veröffentlichung: Build ausführen, danach `node package-site.mjs`. Das Paket enthält Quellcode, Lizenzhinweise, öffentliche Assets und den Pages-Build einschließlich binärsicherer Texturen.
+
+## Waffenmodelle und eigene Sounds
+
+SMG: MP5 mit röhrenförmigem Gehäuse, Schiebeschaft und gebogenem Magazin. Sturmgewehr: AK-47 mit Holzschaft, Holz-Handschutz, Gasrohr und Bananenmagazin. Sniper: Barrett M82 .50 mit langem Lauf, großer Mündungsbremse, gelochtem Laufmantel und Zweibein. Alle drei sind eigene stilisierte Modelle; Reflexvisiere und Zielfernrohr bleiben funktional.
+
+Jede Waffe besitzt einen eigenen synthetisierten Sound mit drei Varianten: kurzer heller MP5-Impuls, mittiger AK-Knall mit mechanischem Anschlag, tiefer Barrett-Schuss mit längerem Nachhall. Die Sounds werden lokal erzeugt, gepuffert und bei gegnerischen Schüssen leiser und gedämpfter abgespielt. Keine externen Tonaufnahmen. Spielwerte und Munition bleiben unverändert.
