@@ -118,3 +118,20 @@ Die vier Arenen besitzen eigene Deckungsmodelle und Umgebungskulissen: Foundry v
 Neu sind maßstäblich gekachelte Oberflächen, prozedurale Lack-, Asphalt- und Sandmaterialien, Wolkenhimmel, Fugen, Schilder, Entwässerung, kleine Bodenablagerungen, dezente Staubpartikel und Pfützen mit Glanzlichtern aus der Umgebungsbeleuchtung. Ein kurzes warmes Licht begleitet Schüsse. Statische Details werden nach Material und Schatteneigenschaften zusammengefasst; animierte Objekte bleiben separat. Der Leistungsmodus blendet feine Bodendetails und Partikel aus und pausiert Lüfteranimationen. Beim Kartenwechsel werden Geometrien, Materialien und karteneigene Texturen freigegeben. Kollisionsvolumen, Spawnpunkte und Bot-Routen bleiben erhalten.
 
 Zusätzliche Grafikprüfung: `node tests/world-detail-browser.mjs` (optional mit `TEST_URL`). Prüft vier Karten, Schießen/Nachladen, beide Qualitätsstufen, wiederholte Kartenwechsel und Konsolen-/Shaderfehler. Die protokollierten Framezeiten beziehen sich ausschließlich auf die Testumgebung.
+
+## Glock, Messer und Bewegung
+
+Jedes Loadout enthält die im Menü ausgewählte Hauptwaffe, eine Glock 17 und ein Kampfmesser. `1`, `2`, `3` oder das Mausrad wechseln den Slot. Die Glock ist halbautomatisch (ein Schuss pro Klick), hat 17 Patronen, 24 Schaden und ein eigenes Drei-Punkt-Visier. Das Messer verursacht 55 Schaden mit einer Reichweite von 1,8 m bis zur gegnerischen Trefferbox und erhöht normales Lauf- und Sprinttempo um 24 %. Linksklick greift an. Waffenwechsel dauern 250 ms, behalten die Magazine und brechen laufende Nachladevorgänge ab. Jede neue Runde setzt Loadout, Magazine und Bewegungszustand zurück.
+
+| Eingabe | Aktion |
+| --- | --- |
+| Shift + W | Sprinten |
+| Strg oder C halten | Ducken |
+| Beim Sprinten Strg / C drücken | Slide bei ausreichendem Tempo |
+| Leertaste | Springen; bricht einen Slide ab |
+| R | Aktive Schusswaffe nachladen |
+| Rechtsklick halten | Visier der aktiven Schusswaffe |
+
+Ducken und Sliden ändern Kamera und autoritative Trefferbox. Aufstehen unter Hindernissen wird verhindert. Ein Slide dauert maximal 0,65 Sekunden, bremst ab und hat eine Sperrzeit; dauerhaftes Gedrückthalten startet keinen weiteren Slide. Kollision, Schusshöhe und Bot-Zielhöhe berücksichtigen den Zustand. Sprint, Ducken, Slide und Waffenwechsel werden an den anderen Spieler übertragen. Die lokale Vorhersage verwendet dieselben festen Bewegungsschritte wie der Server.
+
+Prüfungen: `npm test`, `npm run build`, `node tests/loadout-browser.mjs`, `node tests/sights-browser.mjs`. Der Browsertest unterstützt `TEST_URL` für die veröffentlichte Website.

@@ -1,5 +1,5 @@
 import {isMap} from '../shared/maps.js';
-import {isWeapon} from '../shared/weapons.js';
+import {isPrimary} from '../shared/weapons.js';
 import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
@@ -21,7 +21,7 @@ wss.on('connection',(ws,req)=>{
  const p:Peer={ws,id:randomBytes(8).toString('hex'),queue:[],last:-1,tokens:150,at:Date.now(),alive:true};peers.set(p.id,p);send(p,{type:'hello',id:p.id});ws.on('pong',()=>p.alive=true);
  ws.on('message',raw=>{const now=Date.now();p.tokens=Math.min(150,p.tokens+(now-p.at)*.09);p.at=now;if(--p.tokens<0){ws.close(1008,'Zu viele Nachrichten');return;}try{const m=JSON.parse(raw.toString());if(m.type==='ping'){send(p,{type:'pong',at:m.at});return;}
  if(m.type==='create'||m.type==='join'||m.type==='bot'){
- if(p.room)throw Error('Du bist bereits in einem Raum.');if(m.type==='bot'&&m.difficulty!==undefined&&!['easy','medium','hard'].includes(m.difficulty))throw Error('Ungültige Schwierigkeit.');if(m.weapon!==undefined&&!isWeapon(m.weapon))throw Error('Ungültige Waffe.');if(m.type!=='join'&&m.mapId!==undefined&&!isMap(m.mapId))throw Error('Ungültige Map.');let code:string;
+ if(p.room)throw Error('Du bist bereits in einem Raum.');if(m.type==='bot'&&m.difficulty!==undefined&&!['easy','medium','hard'].includes(m.difficulty))throw Error('Ungültige Schwierigkeit.');if(m.weapon!==undefined&&!isPrimary(m.weapon))throw Error('Ungültige Waffe.');if(m.type!=='join'&&m.mapId!==undefined&&!isMap(m.mapId))throw Error('Ungültige Map.');let code:string;
  if(m.type==='create'||m.type==='bot'){do{code=randomBytes(3).toString('hex').toUpperCase();}while(rooms.has(code));rooms.set(code,new Match(m.mapId??'foundry'));}else{if(typeof m.code!=='string'||!/^[A-F0-9]{6}$/i.test(m.code))throw Error('Ungültiger Raumcode.');code=m.code.toUpperCase();}
  const r=rooms.get(code);if(!r)throw Error('Raum wurde nicht gefunden.');r.add(p.id,m.weapon??'rifle');p.room=code;if(m.type==='bot'){r.add('bot');bots.set(code,new Bot(m.difficulty??'easy',r.mapId));r.ready('bot',now);r.ready(p.id,now);}send(p,{type:'joined',code,mapId:r.mapId,bot:m.type==='bot',difficulty:bots.get(code)?.difficulty});return;}
  const r=p.room?rooms.get(p.room):undefined;if(!r)return;

@@ -1,5 +1,5 @@
 import {maps,type Arena,type MapId} from '../shared/maps.js';
-import {boxes,hitDistance,type Player,type Input} from '../shared/game.js';
+import {bodyHeight,eyeHeight,hitDistance,type Player,type Input} from '../shared/game.js';
 
 type Point={x:number,z:number};
 class Navigation{
@@ -29,7 +29,7 @@ export class Bot{
  if(p.life!==this.life){this.life=p.life;this.path=[];this.planAt=0;this.visibleAt=0;}
  const settings=this.settings;
  const dx=target.x-p.x,dz=target.z-p.z,distance=Math.hypot(dx,dz);
- const aimYaw=Math.atan2(-dx,-dz),aimPitch=Math.atan2(target.y-p.y-.45,distance);
+ const aimYaw=Math.atan2(-dx,-dz),aimPitch=Math.atan2(target.y+bodyHeight(target)*.63-p.y-eyeHeight(p),distance);
  const visible=target.hp>0&&Number.isFinite(hitDistance({...p,yaw:aimYaw,pitch:aimPitch},target,maps[this.mapId]));
  if(!visible)this.visibleAt=0;else if(!this.visibleAt)this.visibleAt=now;
  if(now>=this.planAt){this.path=this.nav.route(p,target);this.planAt=now+600;}

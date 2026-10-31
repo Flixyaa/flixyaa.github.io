@@ -13,6 +13,7 @@ function batch(g:T.Group){g.updateMatrixWorld(true);const groups=new Map<T.Mater
 function profile(parent:T.Object3D,points:number[][],width:number,mat:T.Material){const shape=new T.Shape();points.forEach(([z,y],i)=>i?shape.lineTo(-z,y):shape.moveTo(-z,y));shape.closePath();const geometry=new T.ExtrudeGeometry(shape,{depth:width,bevelEnabled:true,bevelThickness:.003,bevelSize:.003,bevelSegments:2,steps:1});geometry.translate(0,0,-width/2);geometry.rotateY(Math.PI/2);const mesh=new T.Mesh(geometry,mat);mesh.castShadow=mesh.receiveShadow=true;parent.add(mesh);return mesh;}
 function wood(){const canvas=document.createElement('canvas');canvas.width=256;canvas.height=128;const c=canvas.getContext('2d')!;c.fillStyle='#99532a';c.fillRect(0,0,256,128);for(let i=0;i<100;i++){c.strokeStyle=i%3?'#4c250c35':'#edb16840';c.lineWidth=i%4*.45+.3;c.beginPath();for(let x=0;x<=256;x+=8){const y=i*1.3+Math.sin(x*.024+i)*2.5;x?c.lineTo(x,y):c.moveTo(x,y);}c.stroke();}const map=new T.CanvasTexture(canvas);map.colorSpace=T.SRGBColorSpace;return new T.MeshStandardMaterial({map,color:0xa77a55,roughness:.48,metalness:0,bumpMap:map,bumpScale:.0006});}
 export function detailedWeapon(id:WeaponId){
+ if(id==='glock'||id==='knife')return sidearm(id);
  const g=new T.Group(),black=finish(0x24292c),steel=finish(0x657078),rubber=finish(0x151b1c,'rubber'),polymer=finish(0x303735,'rubber'),woodMat=id==='rifle'?wood():undefined;
  const mag=new T.Group();mag.name='magazine';mag.position.set(0,-.15,-.065);g.add(mag);
  let tip=-.7;
@@ -76,4 +77,34 @@ export function detailedWeapon(id:WeaponId){
  for(let n=0;n<3;n++){const scale=id==='marksman'?1.7:id==='smg'?.65:1;const flash=new T.Mesh(new T.ConeGeometry((.035+n*.009)*scale,(.13+n*.04)*scale,5),new T.MeshBasicMaterial({color:n?0xff8c26:0xfff5c0,transparent:true,opacity:.55-n*.12,depthWrite:false,blending:T.AdditiveBlending}));flash.rotation.x=-Math.PI/2;flash.rotation.z=n*2;muzzle.add(flash);}
  return g;
 }
-export function animateWeapon(g:T.Group,reloadProgress:number,kick:number,time:number){const mag=g.getObjectByName('magazine');if(mag){const drop=reloadProgress>0?Math.sin(Math.PI*reloadProgress):0;mag.position.y=-.15-drop*.32;mag.position.z=-.065+drop*.08;mag.rotation.x=drop*.3;}const bolt=g.getObjectByName('bolt');if(bolt)bolt.position.z=.03+kick*.055;const muzzle=g.getObjectByName('muzzle');if(muzzle)muzzle.rotation.z=time*.04;}
+export function animateWeapon(g:T.Group,reloadProgress:number,kick:number,time:number){const mag=g.getObjectByName('magazine');if(mag){const drop=reloadProgress>0?Math.sin(Math.PI*reloadProgress):0;mag.position.y=-.15-drop*.32;mag.position.z=-.065+drop*.08;mag.rotation.x=drop*.3;}const slide=g.getObjectByName('slide');if(slide)slide.position.z=kick*.055;const bolt=g.getObjectByName('bolt');if(bolt)bolt.position.z=.03+kick*.055;const muzzle=g.getObjectByName('muzzle');if(muzzle)muzzle.rotation.z=time*.04;}
+
+function sidearm(id:'glock'|'knife'){
+ const g=new T.Group(),black=finish(0x242b30,'metal',.36),steel=finish(0x9aa9b1,'metal',.24),polymer=finish(0x303a3d,'rubber'),rubber=finish(0x182023,'rubber');g.userData.kind=id;
+ if(id==='glock'){
+  const slide=new T.Group();slide.name='slide';g.add(slide);
+  part(slide,[.096,.078,.34],[0,.064,-.045],black,.007);
+  part(slide,[.054,.006,.072],[.013,.106,-.019],steel,.002);
+  for(const side of [-1,1])for(let n=0;n<7;n++)part(slide,[.004,.058,.004],[side*.049,.064,.078-n*.009],steel,.001);
+  cylinder(g,.018,.31,[0,.065,-.067],black);ring(g,.017,.004,[0,.065,-.224],steel);
+  profile(g,[[.11,.025],[-.21,.025],[-.21,-.016],[-.04,-.026],[.015,-.15],[.13,-.15],[.10,-.035]],.087,polymer);
+  const grip=part(g,[.084,.17,.11],[0,-.085,.08],polymer);grip.rotation.x=-.2;
+  for(let n=0;n<5;n++)part(g,[.086,.008,.10],[0,-.05-n*.022,.077+n*.004],rubber,.001);
+  part(g,[.08,.012,.12],[0,-.065,-.036],polymer);part(g,[.08,.057,.012],[0,-.035,-.09],polymer);const trigger=part(g,[.012,.04,.013],[0,-.026,-.034],black);trigger.rotation.x=-.2;
+  const mag=new T.Group();mag.name='magazine';mag.position.set(0,-.15,-.065);g.add(mag);part(mag,[.089,.025,.12],[0,-.025,.16],rubber);
+  for(const x of [-.032,.032])part(slide,[.018,.025,.025],[x,.116,.09],black,.002);part(slide,[.014,.024,.02],[0,.116,-.187],black,.002);
+  const dot=new T.MeshBasicMaterial({color:0xe1f3d5});for(const x of [-.032,.032])part(slide,[.008,.009,.002],[x,.118,.104],dot,.001);part(slide,[.007,.009,.002],[0,.118,-.175],dot,.001);
+  part(g,[.007,.018,.028],[.049,-.014,.067],steel,.002);
+  batch(g);const muzzle=new T.Group();muzzle.name='muzzle';muzzle.position.set(0,.065,-.29);muzzle.visible=false;g.add(muzzle);
+  const flash=new T.Mesh(new T.ConeGeometry(.035,.15,5),new T.MeshBasicMaterial({color:0xffcd73,transparent:true,opacity:.7,depthWrite:false,blending:T.AdditiveBlending}));flash.rotation.x=-Math.PI/2;muzzle.add(flash);
+ }else{
+  // Full-tang, bevelled blade and textured handle, kept separate from rifle geometry.
+  profile(g,[[.02,.02],[-.28,.025],[-.44,-.005],[-.29,-.065],[.02,-.065]],.018,steel);
+  const edge=new T.MeshStandardMaterial({color:0xc6d2d8,metalness:.9,roughness:.17});profile(g,[[.01,-.05],[-.29,-.05],[-.44,-.005],[-.29,-.068],[.01,-.068]],.02,edge);
+  part(g,[.065,.10,.022],[0,-.02,.025],black);part(g,[.06,.075,.19],[0,-.022,.133],rubber);
+  for(let n=0;n<7;n++)part(g,[.064,.079,.008],[0,-.022,.061+n*.024],polymer,.002);
+  for(const z of [.075,.195]){const pin=cylinder(g,.009,.066,[0,-.025,z],steel);pin.rotation.z=Math.PI/2;}
+  part(g,[.065,.08,.016],[0,-.02,.237],black);batch(g);const muzzle=new T.Group();muzzle.name='muzzle';muzzle.visible=false;g.add(muzzle);
+ }
+ return g;
+}

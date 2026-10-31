@@ -1,4 +1,6 @@
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import type {Stance} from '../shared/game';
+import type {WeaponId} from '../shared/weapons';
 import {finish} from './materials';
 ﻿import * as T from 'three';
 const material=(color:number,roughness=.85)=>finish(color,color===0x49544d?'cloth':roughness<.4?'metal':'rubber',roughness);
@@ -27,12 +29,13 @@ export function soldierModel(){
   const shin=new T.Group();shin.name='shin';shin.position.set(0,-.37,0);leg.add(shin);
   segment(shin,[0,0,0],[0,-.32,0],.07,uniform);ellipsoid(shin,[.077,.07,.13],[0,-.36,-.04],boots);panel(shin,[.155,.025,.26],[0,-.414,-.04],armor);for(let k=0;k<4;k++)panel(shin,[.09,.008,.008],[0,-.31,-.10+k*.022],armor);
  }
+ root.userData.pelvis=root.children.filter(o=>o instanceof T.Mesh).map(o=>({object:o,y:o.position.y}));
  return root;
 }
-export function animateSoldier(root:T.Group,time:number,speed:number,pitch:number,ground:boolean){
- const stride=Math.min(1,speed/7.5),cycle=time*.011;
- for(const [name,offset]of [['leftLeg',0],['rightLeg',Math.PI]] as const){const leg=root.getObjectByName(name)!;leg.rotation.x=ground?Math.sin(cycle+offset)*.55*stride:-.3;leg.getObjectByName('shin')!.rotation.x=ground?Math.max(0,-Math.sin(cycle+offset))*.65*stride:.7;}
- const upper=root.getObjectByName('upper')!;upper.rotation.x=pitch*.65;upper.position.y=1.23+(ground?Math.abs(Math.sin(cycle))*.018*stride:0);
+export function animateSoldier(root:T.Group,time:number,speed:number,pitch:number,ground:boolean,stance:Stance='standing'){
+ const low=stance!=='standing',sliding=stance==='sliding';const stride=Math.min(1,speed/7.5),cycle=time*.011;for(const entry of root.userData.pelvis||[])entry.object.position.y=entry.y-(sliding?.58:low?.45:0);
+ for(const [name,offset]of [['leftLeg',0],['rightLeg',Math.PI]] as const){const leg=root.getObjectByName(name)!;leg.position.y=sliding?.27:low?.42:.84;leg.rotation.x=sliding?-1.1:low?-.85+Math.sin(cycle+offset)*.15*stride:ground?Math.sin(cycle+offset)*.55*stride:-.3;leg.getObjectByName('shin')!.rotation.x=sliding?1.55:low?1.45:ground?Math.max(0,-Math.sin(cycle+offset))*.65*stride:.7;}
+ const upper=root.getObjectByName('upper')!;upper.rotation.x=pitch*.65;upper.position.y=(sliding?.30:low?.51:1.23)+(ground?Math.abs(Math.sin(cycle))*.018*stride:0);
 }
 
 function glovedHand(){
@@ -47,16 +50,17 @@ function glovedHand(){
  segment(g,[.043,.015,0],[.055,-.022,-.028],.017,glove);segment(g,[.055,-.022,-.028],[.028,-.043,-.045],.015,glove);
  panel(g,[.09,.022,.049],[0,.055,0],pad);return g;
 }
-export function viewArms(){
+export function viewArms(id:WeaponId='rifle'){
  const root=new T.Group(),sleeve=finish(0x676a50,'cloth'),cuff=finish(0x282f28,'rubber');
  for(const side of [-1,1]){
   const g=new T.Group();g.name=side<0?'supportArm':'triggerArm';root.add(g);
-  const elbow=side<0?[-.23,-.25,-.08]:[.19,-.25,.25],wrist=side<0?[-.06,-.10,-.23]:[.075,-.15,.12];
+  const elbow=side<0?[-.23,-.25,-.08]:[.19,-.25,.25],wrist=side<0?[-.06,-.10,-.23]:id==='knife'?[.075,-.06,.19]:[.075,-.15,.12];
   segment(g,[side*.29,-.43,.40],elbow,.085,sleeve);ellipsoid(g,[.069,.071,.069],elbow,sleeve);segment(g,elbow,wrist,.062,sleeve);
   ellipsoid(g,[.050,.035,.055],wrist,cuff);
-  const hand=glovedHand();hand.position.set(side<0?-.035:.035,side<0?-.09:-.13,side<0?-.24:.12);hand.rotation.z=side<0?Math.PI/2:.12;g.add(hand);
+  const hand=glovedHand();hand.position.set(side<0?-.035:.035,side<0?-.09:-.13,side<0?-.24:.12);hand.rotation.z=side<0?Math.PI/2:.12;if(id==='knife'&&side===1){hand.position.set(.025,-.06,.15);hand.rotation.x=Math.PI/2;}g.add(hand);
   for(let k=0;k<3;k++){const t=.25+k*.16;const p=elbow.map((v,i)=>v+(wrist[i]-v)*t);ellipsoid(g,[.062,.012,.060],p,sleeve);}
  }
+ if(id==='glock'){const support=root.getObjectByName('supportArm')!;support.position.set(.06,-.05,.31);support.userData.rest=support.position.clone();}if(id==='knife')root.getObjectByName('supportArm')!.visible=false;
  return root;
 }
-export function animateArms(g:T.Object3D,progress:number){const arm=g.getObjectByName('supportArm');if(!arm)return;const reach=progress>0?Math.sin(progress*Math.PI):0;arm.position.set(reach*.08,-reach*.12,reach*.16);arm.rotation.x=reach*.4;}
+export function animateArms(g:T.Object3D,progress:number){const arm=g.getObjectByName('supportArm');if(!arm)return;const reach=progress>0?Math.sin(progress*Math.PI):0;const rest=arm.userData.rest as T.Vector3|undefined;arm.position.set((rest?.x||0)+reach*.08,(rest?.y||0)-reach*.12,(rest?.z||0)+reach*.16);arm.rotation.x=reach*.4;}
