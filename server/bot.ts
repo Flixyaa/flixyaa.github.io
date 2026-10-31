@@ -1,18 +1,17 @@
+import {maps,type Arena,type MapId} from '../shared/maps.js';
 import {boxes,hitDistance,type Player,type Input} from '../shared/game.js';
 
 type Point={x:number,z:number};
-const walkable=(x:number,z:number)=>Math.abs(x)<=17&&Math.abs(z)<=13&&!boxes.some(b=>b.y+b.h/2>.05&&Math.abs(x-b.x)<b.w/2+.4&&Math.abs(z-b.z)<b.d/2+.4);
-const nodes:Point[]=[];
-for(let x=-17;x<=17;x++)for(let z=-13;z<=13;z++)if(walkable(x,z))nodes.push({x,z});
-const key=(p:Point)=>`${p.x},${p.z}`;
-const grid=new Map(nodes.map(p=>[key(p),p]));
-function nearest(p:Point){return nodes.reduce((a,b)=>Math.hypot(a.x-p.x,a.z-p.z)<Math.hypot(b.x-p.x,b.z-p.z)?a:b);}
-function route(from:Point,to:Point):Point[]{
- const start=nearest(from),goal=nearest(to),queue=[start],seen=new Map<string,Point|null>([[key(start),null]]);
- for(let i=0;i<queue.length;i++){const p=queue[i];if(key(p)===key(goal))break;for(const [dx,dz]of [[1,0],[-1,0],[0,1],[0,-1]]){const n=grid.get(`${p.x+dx},${p.z+dz}`);if(n&&!seen.has(key(n))){seen.set(key(n),p);queue.push(n);}}}
- if(!seen.has(key(goal)))return [];const path:Point[]=[];let p:Point|null=goal;while(p&&key(p)!==key(start)){path.unshift(p);p=seen.get(key(p))??null;}return path;
+class Navigation{
+ nodes:Point[]=[];grid:Map<string,Point>;
+ constructor(map:Arena){for(let x=-map.width/2+1;x<map.width/2;x++)for(let z=-map.depth/2+1;z<map.depth/2;z++)if(!map.boxes.some(b=>b.y+b.h/2>.05&&Math.abs(x-b.x)<b.w/2+.4&&Math.abs(z-b.z)<b.d/2+.4))this.nodes.push({x,z});this.grid=new Map(this.nodes.map(p=>[this.key(p),p]));}
+ key(p:Point){return p.x+','+p.z;}
+ nearest(p:Point){return this.nodes.reduce((a,b)=>(a.x-p.x)**2+(a.z-p.z)**2<(b.x-p.x)**2+(b.z-p.z)**2?a:b);}
+ route(from:Point,to:Point):Point[]{const start=this.nearest(from),goal=this.nearest(to),queue=[start],seen=new Map<string,Point|null>([[this.key(start),null]]);
+ for(let i=0;i<queue.length;i++){const p=queue[i];if(this.key(p)===this.key(goal))break;for(const [dx,dz]of [[1,0],[-1,0],[0,1],[0,-1]]){const n=this.grid.get((p.x+dx)+','+(p.z+dz));if(n&&!seen.has(this.key(n))){seen.set(this.key(n),p);queue.push(n);}}}
+ if(!seen.has(this.key(goal)))return [];const path:Point[]=[];let p:Point|null=goal;while(p&&this.key(p)!==this.key(start)){path.push(p);p=seen.get(this.key(p))??null;}return path.reverse();}
 }
-
+const navigation=new Map<MapId,Navigation>();
 /** Generates ordinary inputs. Damage, movement and weapon rules stay in Match. */
 export type Difficulty='easy'|'medium'|'hard';
 export const difficultySettings={
@@ -21,7 +20,8 @@ export const difficultySettings={
  hard:{reaction:550,cadence:240,error:.024,turn:.055,speed:1}
 };
 export class Bot{
- constructor(public difficulty:Difficulty='easy'){}
+ private nav:Navigation;
+ constructor(public difficulty:Difficulty='easy',public readonly mapId:MapId='foundry'){let nav=navigation.get(mapId);if(!nav){nav=new Navigation(maps[mapId]);navigation.set(mapId,nav);}this.nav=nav;}
  get settings(){return difficultySettings[this.difficulty];}
 
  seq=0;path:Point[]=[];planAt=0;visibleAt=0;life=-1;
@@ -30,9 +30,9 @@ export class Bot{
  const settings=this.settings;
  const dx=target.x-p.x,dz=target.z-p.z,distance=Math.hypot(dx,dz);
  const aimYaw=Math.atan2(-dx,-dz),aimPitch=Math.atan2(target.y-p.y-.45,distance);
- const visible=target.hp>0&&Number.isFinite(hitDistance({...p,yaw:aimYaw,pitch:aimPitch},target));
+ const visible=target.hp>0&&Number.isFinite(hitDistance({...p,yaw:aimYaw,pitch:aimPitch},target,maps[this.mapId]));
  if(!visible)this.visibleAt=0;else if(!this.visibleAt)this.visibleAt=now;
- if(now>=this.planAt){this.path=route(p,target);this.planAt=now+600;}
+ if(now>=this.planAt){this.path=this.nav.route(p,target);this.planAt=now+600;}
  while(this.path.length&&Math.hypot(this.path[0].x-p.x,this.path[0].z-p.z)<.35)this.path.shift();
  const point=this.path[0];let wx=0,wz=0;
  if(point&&(!visible||distance>11)){wx=point.x-p.x;wz=point.z-p.z;const len=Math.hypot(wx,wz);wx/=len;wz/=len;}

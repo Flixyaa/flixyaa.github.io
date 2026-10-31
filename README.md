@@ -94,3 +94,20 @@ Unter Einstellungen → Grafik kann zwischen Hoch (Schatten, höhere Auflösung)
 SMG: MP5 mit röhrenförmigem Gehäuse, Schiebeschaft und gebogenem Magazin. Sturmgewehr: AK-47 mit Holzschaft, Holz-Handschutz, Gasrohr und Bananenmagazin. Sniper: Barrett M82 .50 mit langem Lauf, großer Mündungsbremse, gelochtem Laufmantel und Zweibein. Alle drei sind eigene stilisierte Modelle; Reflexvisiere und Zielfernrohr bleiben funktional.
 
 Jede Waffe besitzt einen eigenen synthetisierten Sound mit drei Varianten: kurzer heller MP5-Impuls, mittiger AK-Knall mit mechanischem Anschlag, tiefer Barrett-Schuss mit längerem Nachhall. Die Sounds werden lokal erzeugt, gepuffert und bei gegnerischen Schüssen leiser und gedämpfter abgespielt. Keine externen Tonaufnahmen. Spielwerte und Munition bleiben unverändert.
+
+## Map-Auswahl und individuelle Visiere
+
+Im Hauptmenü stehen vier Arenen mit Grundriss-Vorschau zur Auswahl. Die Auswahl bleibt lokal gespeichert. Der Host bestimmt die Map eines Online-Raums; beitretende Spieler übernehmen sie automatisch.
+
+| Map | Größe | Stil |
+| --- | --- | --- |
+| Foundry 07 | 36 × 28 m | Industriearena |
+| Port Meridian | 56 × 44 m | Containerhafen mit Kränen und Abendlicht |
+| Redstone Basin | 72 × 56 m | Steinbruch mit weiten Flanken |
+| Reactor Nine | 64 × 52 m | Forschungsanlage mit Kühltürmen und Lichtleisten |
+
+Die AK-47 verwendet ein bernsteinfarbenes Kobra-Chevron-Absehen, die MP5 ein grünes Ring-Dot-Visier samt rundem 3D-Gehäuse, und die Barrett ein 4×-Mil-Dot-Absehen mit Distanzmarkierungen. Rechtsklick halten aktiviert das jeweilige Visier. Beim Nachladen wird es ausgeblendet. Alle Absehen liegen auf der Zielmitte.
+
+Kollisionen, Spawnpunkte, Trefferprüfung und Bot-Wegfindung verwenden die Geometrie des jeweiligen Matches; mehrere Räume können gleichzeitig unterschiedliche Maps spielen. Die neuen Arenen verwenden die vorhandenen CC0-Texturen, weiche Kontaktschatten, Bodenmarkierungen, gerippte Container, Beschriftungen und mapabhängige Beleuchtung. Der Leistungsmodus bleibt verfügbar.
+
+Prüfung: `npm test`, `npm run build`, `node tests/maps-browser.mjs` und `node tests/sights-browser.mjs`. Für Browserprüfungen den lokalen Vite-Server starten; `TEST_URL` kann auf die veröffentlichte Website gesetzt werden.

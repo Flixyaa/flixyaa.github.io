@@ -66,6 +66,8 @@ export function detailedWeapon(id:WeaponId){
   cylinder(g,.045,.33,[0,.22,0],black);cylinder(g,.071,.12,[0,.22,-.22],black);cylinder(g,.057,.08,[0,.22,.20],rubber);
   const glass=new T.MeshPhysicalMaterial({color:0x24465c,roughness:.06,metalness:.3,clearcoat:1});cylinder(g,.061,.003,[0,.22,-.281],glass);cylinder(g,.048,.003,[0,.22,.241],glass);
   const turret=cylinder(g,.033,.055,[0,.28,0],black);turret.rotation.x=0;const sideTurret=cylinder(g,.027,.055,[.065,.22,0],black);sideTurret.rotation.set(0,0,Math.PI/2);
+ }else if(id==='smg'){
+  part(g,[.09,.035,.15],[0,.12,-.03],black);for(const z of [-.09,.035])ring(g,.074,.012,[0,.20,z],black);for(const x of [-.071,.071])part(g,[.014,.08,.125],[x,.20,-.027],black);const turret=cylinder(g,.022,.035,[.093,.2,-.03],steel);turret.rotation.z=Math.PI/2;
  }else{
   part(g,[.09,.025,.17],[0,.115,-.03],black);for(const x of [-.067,.067])part(g,[.016,.14,.035],[x,.20,-.03],black,.005);for(const y of [.13,.27])part(g,[.15,.016,.035],[0,y,-.03],black,.005);
  }
