@@ -13,24 +13,36 @@ export class PeerGame {
  private code=''; private host=false; private joined=false;
  private queues=new Map<string,Input[]>(); private sequences=new Map<string,number>();
  private timer?:ReturnType<typeof setInterval>; private deadline?:ReturnType<typeof setTimeout>;
+ private progress?:ReturnType<typeof setInterval>; private opened=false;
  constructor(){setTimeout(()=>{if(this.readyState===3)return;this.readyState=1;this.onopen?.();},0);}
  private emit(value:unknown){this.onmessage?.({data:JSON.stringify(value)});}
- private fail(message:string){this.close();this.emit({type:'error',message});}
+ private fail(message:string){if(this.readyState===3)return;try{this.close();}finally{this.emit({type:'error',message});}}
+ private waitFor(stage:string,timeout:number,error:string){
+  clearTimeout(this.deadline);clearInterval(this.progress);const started=Date.now();
+  const report=()=>this.emit({type:'status',message:stage+' ('+Math.floor((Date.now()-started)/1000)+' s)'});
+  report();this.progress=setInterval(report,1000);this.deadline=setTimeout(()=>this.fail(error),timeout);
+ }
+ private stopWaiting(){clearTimeout(this.deadline);clearInterval(this.progress);}
  send(raw:string){
   if(this.readyState!==1)return;
   const message=JSON.parse(raw);
-  if(message.type==='create'||message.type==='join'){if(!this.peer)this.start(message);return;}
+  if(message.type==='create'||message.type==='join'){
+   if(!this.peer)try{this.start(message);}catch(error){this.fail('Verbindung konnte nicht gestartet werden: '+(error instanceof Error?error.message:String(error)));}return;
+  }
   if(this.host)this.receive('host',message);
   else if(this.guest?.open)this.guest.send(message);
  }
  private start(message:any){
+  if(typeof RTCPeerConnection==='undefined'){this.fail('WebRTC ist in diesem Browser nicht verfügbar. Öffne das Spiel direkt in Chrome, Edge oder Firefox und erlaube WebRTC.');return;}
   this.host=message.type==='create';
   this.code=this.host?Array.from(crypto.getRandomValues(new Uint8Array(3)),n=>n.toString(16).padStart(2,'0')).join('').toUpperCase():String(message.code).trim().toUpperCase();
   if(!/^[A-F0-9]{6}$/.test(this.code)){this.fail('Bitte einen gültigen sechsstelligen Raumcode eingeben.');return;}
   if(!isPrimary(message.weapon)||!isMap(message.mapId)){this.fail('Ungültige Ausrüstung oder Map.');return;}
-  this.deadline=setTimeout(()=>this.fail('Verbindung nicht möglich. Raumcode prüfen und erneut versuchen; eventuell blockiert das Netzwerk WebRTC.'),20000);
-  const peer=this.peer=this.host?new Peer(prefix+this.code):new Peer();
-  peer.on('error',error=>this.fail(error.type==='peer-unavailable'?'Raum nicht gefunden. Der Ersteller muss den Raum geöffnet lassen.':error.type==='unavailable-id'?'Raumcode bereits vergeben. Bitte erneut einen Raum erstellen.':'Peer-Verbindung fehlgeschlagen. Bitte erneut versuchen.'));
+  this.waitFor('Verbinde mit dem Raumdienst …',12000,'Der Raumdienst antwortet nicht. Prüfe Internet, VPN oder Werbeblocker und versuche es erneut. [SIGNAL-TIMEOUT]');
+  // Give guests a local ID too: no extra HTTP request to the cloud /id endpoint.
+  const guestId=prefix+'guest-'+Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
+  const peer=this.peer=new Peer(this.host?prefix+this.code:guestId,{host:'0.peerjs.com',port:443,secure:true});
+  peer.on('error',error=>this.fail(error.type==='peer-unavailable'?'Raum nicht gefunden. Der Ersteller muss den Raum geöffnet lassen.':error.type==='unavailable-id'?'Raumcode bereits vergeben. Bitte erneut einen Raum erstellen.':'Verbindung zum Raumdienst fehlgeschlagen. Prüfe Internet, VPN oder Werbeblocker. ['+error.type+']'));
   peer.on('disconnected',()=>{if(this.readyState!==3)peer.reconnect();});
   peer.on('close',()=>{if(this.readyState!==3)this.fail('Die Raumverbindung wurde beendet.');});
   peer.on('connection',connection=>{
@@ -39,15 +51,17 @@ export class PeerGame {
   });
   peer.on('open',()=>{
    if(this.readyState===3)return;
+   if(this.opened)return;this.opened=true;
    this.emit({type:'hello',id:this.host?'host':'guest'});
    if(this.host){
-    clearTimeout(this.deadline);this.match=new Match(message.mapId);this.match.add('host',message.weapon);
+    this.stopWaiting();this.match=new Match(message.mapId);this.match.add('host',message.weapon);
     this.emit({type:'joined',code:this.code,mapId:this.match.mapId});
     let tick=0;this.timer=setInterval(()=>{
      const inputs=new Map<string,Input>();for(const [id,queue]of this.queues){const input=queue.shift();if(input)inputs.set(id,input);}
      this.match!.tick(Date.now(),inputs);if(++tick%3===0||this.match!.events.length)this.broadcast();
     },1000/60);
    }else{
+    this.waitFor('Raumdienst verbunden. Verbinde mit dem Gastgeber …',15000,'Der Gastgeber ist nicht erreichbar. Lass den Raum beim Gastgeber offen. Falls beide online sind, versuche ein anderes Netzwerk. [WEBRTC-TIMEOUT]');
     const connection=peer.connect(prefix+this.code,{reliable:true,serialization:'json'});this.attach(connection);
     connection.on('open',()=>connection.send({type:'join',weapon:message.weapon}));
    }
@@ -67,7 +81,7 @@ export class PeerGame {
     }else if(this.joined)this.receive('guest',message);
    }else{
     if(message.type==='error'){this.fail(String(message.message));return;}
-    if(message.type==='joined'){this.joined=true;clearTimeout(handshake);clearTimeout(this.deadline);}
+    if(message.type==='joined'){this.joined=true;clearTimeout(handshake);this.stopWaiting();}
     if(['joined','state','pong','left'].includes(message.type))this.emit(message);
    }
   });
@@ -96,7 +110,7 @@ export class PeerGame {
   this.emit(state);if(this.joined&&this.guest?.open)this.guest.send(state);m.events=[];
  }
  close(){
-  if(this.readyState===3)return;this.readyState=3;clearTimeout(this.deadline);clearInterval(this.timer);
+  if(this.readyState===3)return;this.readyState=3;this.stopWaiting();clearInterval(this.timer);
   this.guest?.close();this.peer?.destroy();this.onclose?.();
  }
 }

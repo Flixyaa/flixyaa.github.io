@@ -2,8 +2,9 @@ import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try{
- const pages=await Promise.all([0,1,2].map(()=>browser.newPage()));
+ const pages=await Promise.all([0,1,2].map(()=>browser.newPage()));let idRequests=0;
  for(const page of pages){
+  await page.route(/peerjs\.com\/.*\/id/,route=>{idRequests++;return route.abort();});
   await page.goto('http://127.0.0.1:5173/favicon.svg');
   await page.evaluate(async()=>{window.PeerGame=(await import('/client/peer-game.ts')).PeerGame;});
  }
@@ -36,5 +37,6 @@ try{
  await start(guest,'join','bad');await wait(guest,'error');
  await start(guest,'join',code);await wait(guest,'error');
  assert.match(await guest.evaluate(()=>messages.find(m=>m.type==='error').message),/nicht gefunden/);
- console.log('PASS: real PeerJS signaling/WebRTC, room capacity, map replication, readiness, input/weapon replication, ping, guest replacement, host departure, invalid/missing rooms.');
+ assert.equal(idRequests,0,'Guests must not depend on the cloud ID HTTP endpoint');
+ console.log('PASS: real PeerJS signaling/WebRTC, room capacity, map replication, readiness, input/weapon replication, ping, guest replacement, host departure, invalid/missing rooms, no HTTP ID dependency.');
 }finally{await browser.close();}
