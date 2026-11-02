@@ -3,6 +3,7 @@ import {Match} from '../server/match';
 import {validInput, type Input} from '../shared/game';
 import {isMap} from '../shared/maps';
 import {isPrimary} from '../shared/weapons';
+import {loadPeerConfig,hasRelay} from './peer-config';
 
 const prefix='rift-duel-v1-';
 // The room creator runs the same match simulation as the optional Node server.
@@ -13,7 +14,7 @@ export class PeerGame {
  private code=''; private host=false; private joined=false;
  private queues=new Map<string,Input[]>(); private sequences=new Map<string,number>();
  private timer?:ReturnType<typeof setInterval>; private deadline?:ReturnType<typeof setTimeout>;
- private progress?:ReturnType<typeof setInterval>; private opened=false;
+ private progress?:ReturnType<typeof setInterval>; private opened=false; private starting=false; private relay=false;
  constructor(){setTimeout(()=>{if(this.readyState===3)return;this.readyState=1;this.onopen?.();},0);}
  private emit(value:unknown){this.onmessage?.({data:JSON.stringify(value)});}
  private fail(message:string){if(this.readyState===3)return;try{this.close();}finally{this.emit({type:'error',message});}}
@@ -27,21 +28,24 @@ export class PeerGame {
   if(this.readyState!==1)return;
   const message=JSON.parse(raw);
   if(message.type==='create'||message.type==='join'){
-   if(!this.peer)try{this.start(message);}catch(error){this.fail('Verbindung konnte nicht gestartet werden: '+(error instanceof Error?error.message:String(error)));}return;
+   if(!this.starting){this.starting=true;void this.start(message).catch(error=>this.fail('Verbindung konnte nicht gestartet werden: '+(error instanceof Error?error.message:String(error))));}return;
   }
   if(this.host)this.receive('host',message);
   else if(this.guest?.open)this.guest.send(message);
  }
- private start(message:any){
+ private async start(message:any){
   if(typeof RTCPeerConnection==='undefined'){this.fail('WebRTC ist in diesem Browser nicht verfügbar. Öffne das Spiel direkt in Chrome, Edge oder Firefox und erlaube WebRTC.');return;}
   this.host=message.type==='create';
   this.code=this.host?Array.from(crypto.getRandomValues(new Uint8Array(3)),n=>n.toString(16).padStart(2,'0')).join('').toUpperCase():String(message.code).trim().toUpperCase();
   if(!/^[A-F0-9]{6}$/.test(this.code)){this.fail('Bitte einen gültigen sechsstelligen Raumcode eingeben.');return;}
   if(!isPrimary(message.weapon)||!isMap(message.mapId)){this.fail('Ungültige Ausrüstung oder Map.');return;}
+  this.waitFor('Prüfe Verbindungswege …',18000,'Die Netzwerkkonfiguration antwortet nicht. [TURN-CONFIG]');
+  const config=await loadPeerConfig(import.meta.env.BASE_URL+'multiplayer.json');
+  if(this.readyState===3)return;this.relay=hasRelay(config);
   this.waitFor('Verbinde mit dem Raumdienst …',12000,'Der Raumdienst antwortet nicht. Prüfe Internet, VPN oder Werbeblocker und versuche es erneut. [SIGNAL-TIMEOUT]');
   // Give guests a local ID too: no extra HTTP request to the cloud /id endpoint.
   const guestId=prefix+'guest-'+Array.from(crypto.getRandomValues(new Uint8Array(16)),n=>n.toString(16).padStart(2,'0')).join('');
-  const peer=this.peer=new Peer(this.host?prefix+this.code:guestId,{host:'0.peerjs.com',port:443,secure:true});
+  const peer=this.peer=new Peer(this.host?prefix+this.code:guestId,{host:'0.peerjs.com',port:443,secure:true,config});
   peer.on('error',error=>this.fail(error.type==='peer-unavailable'?'Raum nicht gefunden. Der Ersteller muss den Raum geöffnet lassen.':error.type==='unavailable-id'?'Raumcode bereits vergeben. Bitte erneut einen Raum erstellen.':'Verbindung zum Raumdienst fehlgeschlagen. Prüfe Internet, VPN oder Werbeblocker. ['+error.type+']'));
   peer.on('disconnected',()=>{if(this.readyState!==3)peer.reconnect();});
   peer.on('close',()=>{if(this.readyState!==3)this.fail('Die Raumverbindung wurde beendet.');});
@@ -61,7 +65,7 @@ export class PeerGame {
      this.match!.tick(Date.now(),inputs);if(++tick%3===0||this.match!.events.length)this.broadcast();
     },1000/60);
    }else{
-    this.waitFor('Raumdienst verbunden. Verbinde mit dem Gastgeber …',15000,'Der Gastgeber ist nicht erreichbar. Lass den Raum beim Gastgeber offen. Falls beide online sind, versuche ein anderes Netzwerk. [WEBRTC-TIMEOUT]');
+    this.waitFor(this.relay?'Verbinde mit dem Gastgeber (Relay verfügbar) …':'Verbinde direkt mit dem Gastgeber …',30000,this.relay?'Gastgeber nicht erreichbar – auch über den Relay-Dienst. Prüfe, ob der Raum noch offen ist. [WEBRTC-TIMEOUT]':'Direktverbindung fehlgeschlagen. Für dieses Netzwerk muss im Spiel ein TURN-Relay eingerichtet werden. [TURN-NOT-CONFIGURED]');
     const connection=peer.connect(prefix+this.code,{reliable:true,serialization:'json'});this.attach(connection);
     connection.on('open',()=>connection.send({type:'join',weapon:message.weapon}));
    }
@@ -69,7 +73,7 @@ export class PeerGame {
  }
  private attach(connection:DataConnection){
   this.guest=connection;
-  const handshake=setTimeout(()=>{if(this.guest===connection&&!this.joined)connection.close();},15000);
+  const handshake=setTimeout(()=>{if(this.guest===connection&&!this.joined)connection.close();},35000);
   connection.on('data',(value)=>{
    if(this.guest!==connection||this.readyState===3||!value||typeof value!=='object')return;
    const message=value as any;

@@ -4,6 +4,10 @@ const browser=await chromium.launch({channel:'msedge',headless:true});
 try{
  const pages=await Promise.all([0,1,2].map(()=>browser.newPage()));let idRequests=0;
  for(const page of pages){
+  if(process.env.RIFT_FORCE_RELAY==='1')await page.addInitScript(()=>{
+   const Native=window.RTCPeerConnection;
+   window.RTCPeerConnection=class extends Native{constructor(config){super({...config,iceTransportPolicy:'relay'});}};
+  });
   await page.route(/peerjs\.com\/.*\/id/,route=>{idRequests++;return route.abort();});
   await page.goto('http://127.0.0.1:5173/favicon.svg');
   await page.evaluate(async()=>{window.PeerGame=(await import('/client/peer-game.ts')).PeerGame;});
@@ -21,6 +25,16 @@ try{
  await start(host,'create','','harbor');await wait(host,'joined');
  const code=await host.evaluate(()=>messages.find(m=>m.type==='joined').code);
  await start(guest,'join',code.toLowerCase());await wait(guest,'joined');
+ if(process.env.RIFT_FORCE_RELAY==='1'){
+  for(const page of [host,guest]){
+   const type=await page.evaluate(async()=>{
+    const stats=await game.guest.peerConnection.getStats();
+    const transport=[...stats.values()].find(s=>s.type==='transport'&&s.selectedCandidatePairId);
+    const pair=stats.get(transport.selectedCandidatePairId);return stats.get(pair.localCandidateId).candidateType;
+   });
+   assert.equal(type,'relay');
+  }
+ }
  assert.equal(await guest.evaluate(()=>messages.find(m=>m.type==='joined').mapId),'harbor');
  await start(third,'join',code);await wait(third,'error');
  assert.match(await third.evaluate(()=>messages.find(m=>m.type==='error').message),/voll/);
