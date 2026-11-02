@@ -2,7 +2,7 @@
 
 ## Gegen einen Bot spielen
 
-Im Hauptmenü **Gegen Bot spielen** wählen, danach **Weiterspielen** zum Aktivieren der Maus. Der Trainingsraum startet ohne zweiten Browser. Der Bot findet Wege um Deckungen, dreht sich mit begrenzter Geschwindigkeit und schießt erst nach einer Reaktionszeit bei freier Sicht. Er verwendet dieselbe serverseitige Bewegung, Munition, Nachladezeit, Trefferprüfung und Respawnlogik wie Spieler. Es gelten dieselben Matchregeln; mit **Bereit / Revanche** beginnt nach Matchende das nächste Duell. Der Bot belegt den zweiten Platz; beim Verlassen wird der Trainingsraum entfernt. Der Bot-Modus läuft direkt im Browser und benötigt keinen Node-Server. Online-PvP verwendet weiterhin den autoritativen WebSocket-Server. Vor dem Start stehen im Menü Leicht (Standard), Mittel und Schwer zur Wahl. Leicht reagiert nach 1,5 s, schießt höchstens alle 850 ms und bewegt sich langsamer; Mittel reagiert nach 900 ms und schießt alle 450 ms; Schwer reagiert nach 550 ms und schießt alle 240 ms. Leicht und Mittel zielen ungenauer als Schwer. Der Bot plant Wege zur Gegnerposition, zielt aber nur bei Sichtkontakt.
+Im Hauptmenü **Gegen Bot spielen** wählen, danach **Weiterspielen** zum Aktivieren der Maus. Der Trainingsraum startet ohne zweiten Browser. Der Bot findet Wege um Deckungen, dreht sich mit begrenzter Geschwindigkeit und schießt erst nach einer Reaktionszeit bei freier Sicht. Er verwendet dieselbe serverseitige Bewegung, Munition, Nachladezeit, Trefferprüfung und Respawnlogik wie Spieler. Es gelten dieselben Matchregeln; mit **Bereit / Revanche** beginnt nach Matchende das nächste Duell. Der Bot belegt den zweiten Platz; beim Verlassen wird der Trainingsraum entfernt. Der Bot-Modus läuft direkt im Browser und benötigt keinen Node-Server. Online-PvP nutzt standardm??ig PeerJS/WebRTC. Der Raumersteller f?hrt die Matchsimulation aus. Vor dem Start stehen im Menü Leicht (Standard), Mittel und Schwer zur Wahl. Leicht reagiert nach 1,5 s, schießt höchstens alle 850 ms und bewegt sich langsamer; Mittel reagiert nach 900 ms und schießt alle 450 ms; Schwer reagiert nach 550 ms und schießt alle 240 ms. Leicht und Mittel zielen ungenauer als Schwer. Der Bot plant Wege zur Gegnerposition, zielt aber nur bei Sichtkontakt.
 
 Eigenständiger Desktop-1vs1-Shooter auf der Low-Poly-Map **Foundry**. Modelle und Sounds entstehen im Code. Betonoberflächen verwenden lokale CC0-Texturen von Poly Haven; Quellen stehen in ASSET-LICENSES.md.
 
@@ -49,7 +49,7 @@ Optionale Variablen:
 | PORT | 3001 | HTTP-/WebSocket-Port des Servers |
 | HOST | 0.0.0.0 | Bind-Adresse |
 | ALLOWED_ORIGIN | nicht gesetzt | Exakt erlaubter Browser-Origin, z. B. https://duel.example.com |
-| VITE_WS_URL | automatisch gleicher Host, /ws | Optional separate ws://- oder wss://-Adresse, beim Client-Build setzen |
+| VITE_WS_URL | nicht gesetzt: PeerJS | Optional separate ws://- oder wss://-Adresse, beim Client-Build setzen |
 
 Vite leitet /ws im Entwicklungsbetrieb an localhost:3001 weiter. Bei geändertem Entwicklungsport muss vite.config.ts entsprechend angepasst werden. Für LAN-Tests Rechner-IP statt localhost verwenden und Firewall-Port 5173 freigeben. Öffentliche HTTPS-Seiten benötigen wss://.
 
@@ -135,3 +135,11 @@ Jedes Loadout enthält die im Menü ausgewählte Hauptwaffe, eine Glock 17 und e
 Ducken und Sliden ändern Kamera und autoritative Trefferbox. Aufstehen unter Hindernissen wird verhindert. Ein Slide dauert maximal 0,65 Sekunden, bremst ab und hat eine Sperrzeit; dauerhaftes Gedrückthalten startet keinen weiteren Slide. Kollision, Schusshöhe und Bot-Zielhöhe berücksichtigen den Zustand. Sprint, Ducken, Slide und Waffenwechsel werden an den anderen Spieler übertragen. Die lokale Vorhersage verwendet dieselben festen Bewegungsschritte wie der Server.
 
 Prüfungen: `npm test`, `npm run build`, `node tests/loadout-browser.mjs`, `node tests/sights-browser.mjs`. Der Browsertest unterstützt `TEST_URL` für die veröffentlichte Website.
+
+## Multiplayer auf GitHub Pages (PeerJS)
+
+Raum erstellen, den sechsstelligen Code oder Einladungslink teilen und im zweiten Browser beitreten. Beide Spieler w?hlen Bereit, danach Weiterspielen. Der Host muss die Seite offen und f?r fl?ssiges Spielen im Vordergrund lassen. Verl?sst der Gast den Raum, kann ein neuer Gast denselben Code nutzen; verl?sst der Host den Raum, endet die Sitzung. R?ume sind auf zwei Spieler begrenzt. Die Map des Hosts gilt f?r beide Spieler.
+
+PeerJS nutzt den ?ffentlichen PeerServer zur Vermittlung und WebRTC f?r Spieldaten. Restriktive Netzwerke k?nnen direkte Verbindungen blockieren; es ist kein eigener TURN-Relay konfiguriert. Es gibt keine Hostmigration oder Manipulationssicherheit gegen?ber dem Host. Bei Bedarf bleibt der separate WebSocket-Server ?ber VITE_WS_URL verf?gbar.
+
+Pr?fung: Bei laufendem Vite-Server `node tests/peer-browser.mjs` ausf?hren. Der Test verwendet echte PeerJS-Verbindungen und pr?ft Beitritt, Raumkapazit?t, Map, Bereitschaft, Eingabereplikation, Ping, Gastwechsel, Hostabbruch und ung?ltige/nicht vorhandene R?ume.

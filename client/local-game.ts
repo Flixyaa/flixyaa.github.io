@@ -4,7 +4,7 @@ import {Match} from '../server/match';
 import {Bot,type Difficulty} from '../server/bot';
 import {validInput,type Input} from '../shared/game';
 
-// Local single-player transport. Online rooms still use the authoritative Node server.
+// Local single-player transport. Online rooms use PeerJS or the optional Node server.
 export class LocalGame{
  readyState=0;onopen:(()=>void)|null=null;onclose:(()=>void)|null=null;onerror:(()=>void)|null=null;onmessage:((event:{data:string})=>void)|null=null;
  private match=new Match();private bot=new Bot();private queue:Input[]=[];private timer:ReturnType<typeof setInterval>|undefined;
